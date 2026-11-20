@@ -1,0 +1,33 @@
+[workspace]
+resolver = "2"
+members = ["crates/kp-core", "crates/kp-search", "crates/kp-keyring", "crates/kp-import", "crates/kp-browser", "crates/kp-memsec", "crates/kp-protocol", "crates/kp-transport", "crates/kp-identity", "crates/kp-pairing", "crates/kp-devices", "crates/kp-peers", "crates/kp-lan", "crates/kp-sync", "crates/kp-template", "crates/kp-generator", "crates/kp-store", "crates/kp-app", "crates/kp-pinentry", "crates/kp-approval", "crates/kp-backend"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "GPL-3.0-or-later"
+description = "KryptoPass core: vault, OpenPGP, sync and devices without UI"
+homepage = "https://github.com/KryptoPass/KryptoPass"
+repository = "https://github.com/KryptoPass/KryptoPass"
+authors = ["KryptoPass contributors"]
+
+# kp-approval reads the app id here at build time (pinentry socket, profile
+# paths). It must match `app-id` in kryptopass-desktop/Cargo.toml until the id
+# is passed in at run time.
+[workspace.metadata.kryptopass]
+app-id = "org.kryptopass.desktop"
+
+[workspace.lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+unwrap_used = "warn"
+expect_used = "warn"
+
+[profile.dev]
+debug = "line-tables-only"
+split-debuginfo = "unpacked"
+incremental = true
+
+[profile.release]
+lto = "thin"

@@ -1,0 +1,43 @@
+[package]
+name = "kp-backend"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Desktop backend without UI: profile paths, vault access, OpenPGP, keyring, backups and imports"
+publish = false
+
+[lib]
+name = "kryptopass_backend"
+
+[dependencies]
+kryptopass-core = { package = "kp-core", path = "../kp-core" }
+kryptopass-app = { package = "kp-app", path = "../kp-app" }
+kryptopass-store = { package = "kp-store", path = "../kp-store" }
+kryptopass-keyring = { package = "kp-keyring", path = "../kp-keyring" }
+kryptopass-search = { package = "kp-search", path = "../kp-search" }
+kryptopass-import = { package = "kp-import", path = "../kp-import" }
+kryptopass-secure-memory = { package = "kp-memsec", path = "../kp-memsec" }
+kryptopass-browser = { package = "kp-browser", path = "../kp-browser" }
+kryptopass-approval = { package = "kp-approval", path = "../kp-approval" }
+kryptopass-identity = { package = "kp-identity", path = "../kp-identity" }
+kryptopass-devices = { package = "kp-devices", path = "../kp-devices" }
+kryptopass-peers = { package = "kp-peers", path = "../kp-peers" }
+anyhow = "1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-webpki-roots", "blocking"] }
+url = "2"
+libc = "0.2"
+gpgme = { version = "0.11", features = ["v1_15"] }
+getrandom = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4", "serde"] }
+zeroize = "1"
+sha2 = "0.10"
+sha1 = "0.10"
+tracing = "0.1"
+tracing-log = "0.2"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+[lints]
+workspace = true
