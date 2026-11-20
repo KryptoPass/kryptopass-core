@@ -93,7 +93,7 @@ fn catalog_changes_are_authoritative_even_before_unlock() -> TestResult {
         ..Limits::default()
     });
     index.reconcile(vec![
-        record(2, 1, &["Trash"], false),
+        record(2, 1, &["Papelera"], false),
         record(1, 1, &["Trabajo"], true),
     ])?;
     assert_eq!(index.search(" ")?, vec![id(1), id(2)]);
@@ -203,7 +203,7 @@ fn reconciliation_retains_current_users_and_retires_edited_removed_or_trashed_us
 
     index.reconcile(vec![
         record(1, 2, &["Renombrado"], true),
-        record(3, 1, &["Trash"], false),
+        record(3, 1, &["Papelera"], false),
     ])?;
     assert!(index.search("ana-original")?.is_empty());
     assert!(index.search("beto-original")?.is_empty());
