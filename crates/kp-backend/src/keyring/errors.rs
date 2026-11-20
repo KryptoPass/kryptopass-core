@@ -4,69 +4,69 @@ use kryptopass_keyring::{CommandError, Error, FileError, InvalidInput, Step, Unc
 
 pub(super) fn describe(error: &Error) -> String {
     let fingerprint =
-        |message: &str, value: &dyn ToString| crate::i18n::format(message, &[value.to_string()]);
+        |message: &str, value: &dyn ToString| crate::i18n::trf(message, &[value.to_string()]);
     match error {
         Error::InvalidInput(input) => invalid_input(*input),
-        Error::UnsupportedEngine { found, minimum } => crate::i18n::format(
-            "GnuPG %1 no es compatible; se necesita %2 o posterior.",
+        Error::UnsupportedEngine { found, minimum } => crate::i18n::trf(
+            "GnuPG %1 is not supported; %2 or later is required.",
             &[found.clone(), (*minimum).to_owned()],
         ),
-        Error::Canceled => crate::i18n::text("Se canceló la operación en pinentry."),
+        Error::Canceled => crate::i18n::tr("The operation in pinentry was canceled."),
         Error::KeyNotFound(value) => fingerprint(
-            "No existe una clave local con la huella primaria %1.",
+            crate::i18n::tr_noop("There is no local key with primary fingerprint %1."),
             value,
         ),
-        Error::SubkeyNotFound { key, subkey } => crate::i18n::format(
-            "La subclave %1 no pertenece a la clave primaria %2.",
+        Error::SubkeyNotFound { key, subkey } => crate::i18n::trf(
+            "Subkey %1 does not belong to primary key %2.",
             &[subkey.to_string(), key.to_string()],
         ),
         Error::UserIdNotFound(_) => {
-            crate::i18n::text("La identidad indicada no pertenece a esta clave.")
+            crate::i18n::tr("The given identity does not belong to this key.")
         }
         Error::UserIdAlreadyPresent(_) => {
-            crate::i18n::text("La identidad ya está presente en esta clave.")
+            crate::i18n::tr("The identity is already present in this key.")
         }
-        Error::UserIdRevoked => crate::i18n::text("La identidad está revocada."),
-        Error::UserIdInvalid => crate::i18n::text("La identidad no es válida."),
-        Error::AlreadyRevoked(value) => fingerprint("%1 ya está revocada.", value),
+        Error::UserIdRevoked => crate::i18n::tr("The identity is revoked."),
+        Error::UserIdInvalid => crate::i18n::tr("The identity is not valid."),
+        Error::AlreadyRevoked(value) => {
+            fingerprint(crate::i18n::tr_noop("%1 is already revoked."), value)
+        }
         Error::KeyUnusable(value) => fingerprint(
-            "La clave %1 está revocada, deshabilitada o no es válida.",
+            crate::i18n::tr_noop("Key %1 is revoked, disabled or not valid."),
             value,
         ),
-        Error::KeyExpired(value) => fingerprint("La clave %1 está caducada.", value),
-        Error::NotCertifier(_) => crate::i18n::text(
-            "La operación requiere la clave privada primaria propia con capacidad de certificación.",
+        Error::KeyExpired(value) => fingerprint(crate::i18n::tr_noop("Key %1 is expired."), value),
+        Error::NotCertifier(_) => crate::i18n::tr(
+            "The operation requires your own primary private key with certification capability.",
         ),
-        Error::NoSecretMaterial(_) => {
-            crate::i18n::text("La clave no tiene material privado local.")
-        }
-        Error::NoSecretKey => crate::i18n::text("No hay ninguna clave privada OpenPGP disponible."),
-        Error::SecretMaterialPresent(_) => crate::i18n::text(
-            "GnuPG no permite borrar solo la parte pública mientras existe material secreto; elimina primero ese material o borra la clave completa.",
+        Error::NoSecretMaterial(_) => crate::i18n::tr("The key has no local private material."),
+        Error::NoSecretKey => crate::i18n::tr("No OpenPGP private key is available."),
+        Error::SecretMaterialPresent(_) => crate::i18n::tr(
+            "GnuPG does not allow deleting only the public part while secret material exists; delete that material first or delete the whole key.",
         ),
-        Error::NothingToImport => crate::i18n::text(
-            "El archivo no contiene claves ni revocaciones OpenPGP que GnuPG pueda importar.",
+        Error::NothingToImport => crate::i18n::tr(
+            "The file contains no OpenPGP keys or revocations that GnuPG can import.",
         ),
         Error::ImportChangedNothing {
             not_imported,
             failed,
-        } => crate::i18n::format(
-            "La importación no aplicó ningún cambio: %1 elemento(s) no importado(s) y %2 registro(s) con error.",
+        } => crate::i18n::trf(
+            "The import applied no changes: %1 item(s) not imported and %2 record(s) with errors.",
             &[not_imported.to_string(), failed.to_string()],
         ),
         Error::EncryptionSubkeyFailed {
             fingerprint: value,
             source,
-        } => crate::i18n::format(
-            "La clave primaria %1 ya se creó, pero falló la subclave de cifrado: %2",
+        } => crate::i18n::trf(
+            "Primary key %1 was created, but the encryption subkey failed: %2",
             &[value.to_string(), source.to_string()],
         ),
         Error::MalformedRevocation(_) => {
-            crate::i18n::text("El certificado de revocación no tiene un formato válido.")
+            crate::i18n::tr("The revocation certificate does not have a valid format.")
         }
         Error::Unconfirmed(unconfirmed) => self::unconfirmed(unconfirmed),
-        Error::Gpg { step, source } => crate::i18n::format(
-            "GnuPG no pudo %1: %2",
+        Error::Gpg { step, source } => crate::i18n::trf(
+            "GnuPG could not %1: %2",
             &[step_name(*step), source.to_string()],
         ),
         Error::File(file) => file_error(file),
@@ -76,125 +76,161 @@ pub(super) fn describe(error: &Error) -> String {
 }
 
 pub(super) fn invalid_input(input: InvalidInput) -> String {
-    crate::i18n::text(match input {
+    crate::i18n::tr(match input {
         InvalidInput::Fingerprint => {
-            "Indica una huella OpenPGP completa de 40 o 64 dígitos hexadecimales."
+            crate::i18n::tr_noop("Enter a full OpenPGP fingerprint of 40 or 64 hexadecimal digits.")
         }
-        InvalidInput::UserId => {
-            "La identidad debe tener entre 1 y 255 bytes y no contener controles."
-        }
+        InvalidInput::UserId => crate::i18n::tr_noop(
+            "The identity must be between 1 and 255 bytes and contain no control characters.",
+        ),
         InvalidInput::ExpiryTooFar => {
-            "La fecha de caducidad supera el límite que puede representar GnuPG."
+            crate::i18n::tr_noop("The expiration date exceeds the limit GnuPG can represent.")
         }
         InvalidInput::Keyserver => {
-            "Indica una URL válida con servidor y sin credenciales ni espacios."
+            crate::i18n::tr_noop("Enter a valid URL with a host and without credentials or spaces.")
         }
-        InvalidInput::Path => "La ruta local está vacía o supera el tamaño permitido.",
+        InvalidInput::Path => {
+            crate::i18n::tr_noop("The local path is empty or exceeds the allowed size.")
+        }
         InvalidInput::TooManySubkeys => {
-            "La solicitud de caducidad puede incluir como máximo 64 subclaves."
+            crate::i18n::tr_noop("An expiry request can include at most 64 subkeys.")
         }
-        InvalidInput::DuplicateSubkey => "La lista de huellas de subclave contiene duplicados.",
-        InvalidInput::UserIdCount => "Selecciona entre 1 y 64 identidades para certificar.",
-        InvalidInput::DuplicateUserId => "La lista de identidades contiene duplicados.",
+        InvalidInput::DuplicateSubkey => {
+            crate::i18n::tr_noop("The list of subkey fingerprints contains duplicates.")
+        }
+        InvalidInput::UserIdCount => {
+            crate::i18n::tr_noop("Select between 1 and 64 identities to certify.")
+        }
+        InvalidInput::DuplicateUserId => {
+            crate::i18n::tr_noop("The list of identities contains duplicates.")
+        }
         InvalidInput::SelfCertification => {
-            "La certificación debe dirigirse a una clave distinta de la firmante."
+            crate::i18n::tr_noop("The certification must target a key other than the signing one.")
         }
-        _ => "La solicitud OpenPGP contiene un valor no válido.",
+        _ => crate::i18n::tr_noop("The OpenPGP request contains an invalid value."),
     })
 }
 
 fn unconfirmed(unconfirmed: &Unconfirmed) -> String {
     let with =
-        |message: &str, value: &dyn ToString| crate::i18n::format(message, &[value.to_string()]);
+        |message: &str, value: &dyn ToString| crate::i18n::trf(message, &[value.to_string()]);
     match unconfirmed {
         Unconfirmed::CreatedKeyMissing(value) => with(
-            "La clave primaria %1 se creó, pero no aparece en el llavero.",
+            crate::i18n::tr_noop(
+                "Primary key %1 was created, but it does not appear in the keyring.",
+            ),
             value,
         ),
         Unconfirmed::KeyNotRevoked(value) => with(
-            "GnuPG importó el certificado, pero no confirmó la revocación de %1.",
+            crate::i18n::tr_noop(
+                "GnuPG imported the certificate, but did not confirm the revocation of %1.",
+            ),
             value,
         ),
-        Unconfirmed::SubkeyNotRevoked(value) => {
-            with("GnuPG no confirmó la revocación de la subclave %1.", value)
-        }
+        Unconfirmed::SubkeyNotRevoked(value) => with(
+            crate::i18n::tr_noop("GnuPG did not confirm the revocation of subkey %1."),
+            value,
+        ),
         Unconfirmed::KeyStillPresent(value) => with(
-            "GnuPG terminó, pero la clave %1 aún aparece en el llavero.",
+            crate::i18n::tr_noop("GnuPG finished, but key %1 still appears in the keyring."),
             value,
         ),
         Unconfirmed::SecretStillPresent(value) => with(
-            "GnuPG terminó, pero el material privado de %1 sigue presente.",
+            crate::i18n::tr_noop(
+                "GnuPG finished, but the private material of %1 is still present.",
+            ),
             value,
         ),
         Unconfirmed::PublicPartDeleted(value) => with(
-            "GnuPG eliminó también la parte pública de %1; la operación quedó parcialmente aplicada.",
+            crate::i18n::tr_noop(
+                "GnuPG also deleted the public part of %1; the operation was partially applied.",
+            ),
             value,
         ),
         Unconfirmed::OwnerTrustNotApplied(value) => with(
-            "GnuPG no registró la confianza de la clave %1. Sigue sin poder cifrar con ella; revisa GnuPG e inténtalo de nuevo.",
+            crate::i18n::tr_noop(
+                "GnuPG did not record trust for key %1. It still cannot encrypt with it; check GnuPG and try again.",
+            ),
             value,
         ),
         Unconfirmed::NotFetched(value) => with(
-            "La fuente externa no devolvió la clave %1 solicitada.",
+            crate::i18n::tr_noop("The external source did not return the requested key %1."),
             value,
         ),
         Unconfirmed::MissingFingerprint => {
-            crate::i18n::text("GnuPG creó la clave pero no devolvió su huella.")
+            crate::i18n::tr("GnuPG created the key but did not return its fingerprint.")
         }
         Unconfirmed::EmptyOutput => {
-            crate::i18n::text("GnuPG no produjo datos para la exportación solicitada.")
+            crate::i18n::tr("GnuPG produced no data for the requested export.")
         }
         Unconfirmed::NotUtf8 => {
-            crate::i18n::text("GnuPG devolvió una clave pública que no es ASCII/UTF-8.")
+            crate::i18n::tr("GnuPG returned a public key that is not ASCII/UTF-8.")
         }
         _ => unconfirmed.to_string(),
     }
 }
 
 fn step_name(step: Step) -> String {
-    crate::i18n::text(match step {
-        Step::OpenContext => "abrir el contexto",
-        Step::ListKeys => "consultar el llavero",
-        Step::CreateKey => "crear la clave",
+    crate::i18n::tr(match step {
+        Step::OpenContext => crate::i18n::tr_noop("open the context"),
+        Step::ListKeys => crate::i18n::tr_noop("query the keyring"),
+        Step::CreateKey => crate::i18n::tr_noop("create the key"),
         Step::Import => "importar",
         Step::Export => "exportar",
-        Step::ChangePassphrase => "cambiar la frase de paso",
-        Step::SetExpiry => "actualizar la caducidad",
-        Step::AddUserId => "añadir la identidad",
-        Step::SetPrimaryUserId => "cambiar la identidad principal",
-        Step::RevokeUserId => "revocar la identidad",
-        Step::AddSubkey => "crear la subclave",
-        Step::RevokeSubkey => "revocar la subclave",
-        Step::SelectSigner => "seleccionar la clave firmante",
+        Step::ChangePassphrase => crate::i18n::tr_noop("change the passphrase"),
+        Step::SetExpiry => crate::i18n::tr_noop("update the expiry"),
+        Step::AddUserId => crate::i18n::tr_noop("add the identity"),
+        Step::SetPrimaryUserId => crate::i18n::tr_noop("change the primary identity"),
+        Step::RevokeUserId => crate::i18n::tr_noop("revoke the identity"),
+        Step::AddSubkey => crate::i18n::tr_noop("create the subkey"),
+        Step::RevokeSubkey => crate::i18n::tr_noop("revoke the subkey"),
+        Step::SelectSigner => crate::i18n::tr_noop("select the signing key"),
         Step::Certify => "certificar",
         Step::Sign => "firmar",
         Step::Delete => "eliminar",
-        _ => "completar la operación",
+        _ => crate::i18n::tr_noop("complete the operation"),
     })
 }
 
 fn file_error(error: &FileError) -> String {
     let path = |message: &str, value: &std::path::Path| {
-        crate::i18n::format(message, &[value.display().to_string()])
+        crate::i18n::trf(message, &[value.display().to_string()])
     };
     match error {
-        FileError::Open { path: value, .. } | FileError::Read { path: value, .. } => {
-            path("No se pudo leer el archivo %1.", value)
+        FileError::Open { path: value, .. } | FileError::Read { path: value, .. } => path(
+            crate::i18n::tr_noop("The file %1 could not be read."),
+            value,
+        ),
+        FileError::NotRegular(value) => path(
+            crate::i18n::tr_noop("%1 is not a regular local file."),
+            value,
+        ),
+        FileError::TooLarge(value) => {
+            path(crate::i18n::tr_noop("%1 exceeds the allowed size."), value)
         }
-        FileError::NotRegular(value) => path("%1 no es un archivo local regular.", value),
-        FileError::TooLarge(value) => path("%1 supera el tamaño permitido.", value),
-        FileError::NotAFile(value) => path("%1 no indica un archivo.", value),
-        FileError::Destination { path: value, .. } => {
-            path("No se puede usar %1 como carpeta de destino.", value)
+        FileError::NotAFile(value) => {
+            path(crate::i18n::tr_noop("%1 does not point to a file."), value)
         }
-        FileError::DestinationExists(value) => path("%1 ya existe y no se sobrescribirá.", value),
+        FileError::Destination { path: value, .. } => path(
+            crate::i18n::tr_noop("%1 cannot be used as a destination folder."),
+            value,
+        ),
+        FileError::DestinationExists(value) => path(
+            crate::i18n::tr_noop("%1 already exists and will not be overwritten."),
+            value,
+        ),
         FileError::DatabaseExtension(value) => {
-            path("%1 tiene una extensión de base de datos.", value)
+            path(crate::i18n::tr_noop("%1 has a database extension."), value)
         }
-        FileError::InsideGnupgHome(value) => path("%1 está dentro de la carpeta de GnuPG.", value),
-        FileError::Write { path: value, .. } => path("No se pudo escribir %1.", value),
+        FileError::InsideGnupgHome(value) => path(
+            crate::i18n::tr_noop("%1 is inside the GnuPG folder."),
+            value,
+        ),
+        FileError::Write { path: value, .. } => {
+            path(crate::i18n::tr_noop("%1 could not be written."), value)
+        }
         FileError::Temporary(_) => {
-            crate::i18n::text("No se pudo crear un archivo temporal privado.")
+            crate::i18n::tr("A private temporary file could not be created.")
         }
         _ => error.to_string(),
     }
@@ -202,13 +238,13 @@ fn file_error(error: &FileError) -> String {
 
 fn command_error(error: &CommandError) -> String {
     match error {
-        CommandError::Spawn(_) => crate::i18n::text("No se pudo iniciar gpg."),
-        CommandError::Io(_) => crate::i18n::text("No se pudo comunicar con gpg."),
-        CommandError::Timeout => crate::i18n::text("gpg superó el tiempo límite."),
+        CommandError::Spawn(_) => crate::i18n::tr("gpg could not be started."),
+        CommandError::Io(_) => crate::i18n::tr("gpg could not be reached."),
+        CommandError::Timeout => crate::i18n::tr("gpg timed out."),
         CommandError::Exit(status) => {
-            crate::i18n::format("gpg terminó con %1.", &[status.to_string()])
+            crate::i18n::trf("gpg exited with %1.", &[status.to_string()])
         }
-        CommandError::Protocol(_) => crate::i18n::text("gpg respondió de forma inesperada."),
+        CommandError::Protocol(_) => crate::i18n::tr("gpg responded unexpectedly."),
         _ => error.to_string(),
     }
 }

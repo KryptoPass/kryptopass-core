@@ -42,16 +42,22 @@ fn json_for_registry(registry: &ImporterRegistry) -> Result<String> {
                 .collect::<Vec<_>>()
                 .join(" ");
             let mut capabilities: Vec<_> = [
-                ("Carpetas", features.folders),
-                ("Descripciones de carpetas", features.folder_descriptions),
-                ("Favoritos", features.favorites),
-                ("Papelera", features.trash),
-                ("Fechas originales", features.timestamps),
-                ("Campos adicionales", features.additional_fields),
+                (crate::i18n::tr_noop("Folders"), features.folders),
+                (
+                    crate::i18n::tr_noop("Folder descriptions"),
+                    features.folder_descriptions,
+                ),
+                (crate::i18n::tr_noop("Favorites"), features.favorites),
+                (crate::i18n::tr_noop("Trash"), features.trash),
+                (crate::i18n::tr_noop("Original dates"), features.timestamps),
+                (
+                    crate::i18n::tr_noop("Additional fields"),
+                    features.additional_fields,
+                ),
             ]
             .into_iter()
             .map(|(label, supported)| Capability {
-                label: crate::i18n::text(label),
+                label: crate::i18n::tr(label),
                 support: if supported {
                     "supported"
                 } else {
@@ -62,12 +68,15 @@ fn json_for_registry(registry: &ImporterRegistry) -> Result<String> {
             capabilities.extend(
                 [
                     ("Passkeys", features.passkeys),
-                    ("Reglas de autocompletado", features.autofill_rules),
-                    ("Adjuntos", features.attachments),
+                    (
+                        crate::i18n::tr_noop("Autofill rules"),
+                        features.autofill_rules,
+                    ),
+                    (crate::i18n::tr_noop("Attachments"), features.attachments),
                 ]
                 .into_iter()
                 .map(|(label, support)| Capability {
-                    label: crate::i18n::text(label),
+                    label: crate::i18n::tr(label),
                     support: match support {
                         FeatureSupport::Supported => "supported",
                         FeatureSupport::ReferenceOnly => "reference",
@@ -76,7 +85,7 @@ fn json_for_registry(registry: &ImporterRegistry) -> Result<String> {
                 }),
             );
             capabilities.push(Capability {
-                label: crate::i18n::text("Archivos cifrados"),
+                label: crate::i18n::tr("Encrypted files"),
                 support: if registered.decryption_available {
                     "supported"
                 } else {
@@ -99,12 +108,12 @@ fn json_for_registry(registry: &ImporterRegistry) -> Result<String> {
                 formats: info.formats.iter().map(|format| format.extension).collect(),
                 file_filters: vec![
                     format!("{} ({patterns})", info.name),
-                    crate::i18n::text("Todos los archivos (*)"),
+                    crate::i18n::tr("All files (*)"),
                 ],
                 entry_types: features
                     .entry_types
                     .iter()
-                    .map(|kind| crate::i18n::text(entry_type_label(*kind)))
+                    .map(|kind| crate::i18n::tr(entry_type_label(*kind)))
                     .collect(),
                 capabilities,
                 decryption_available: registered.decryption_available,
@@ -119,15 +128,15 @@ fn json_for_registry(registry: &ImporterRegistry) -> Result<String> {
 pub fn entry_type_label(kind: EntryType) -> &'static str {
     match kind {
         EntryType::Login => "Logins",
-        EntryType::Note => "Notas",
-        EntryType::Alias => "Alias",
-        EntryType::Card => "Tarjetas",
-        EntryType::Identity => "Identidades",
-        EntryType::Custom => "Elementos personalizados",
-        EntryType::Wifi => "Redes Wi-Fi",
-        EntryType::SshKey => "Claves SSH",
-        EntryType::Totp => "Autenticadores TOTP",
-        EntryType::License => "Licencias",
+        EntryType::Note => crate::i18n::tr_noop("Notes"),
+        EntryType::Alias => crate::i18n::tr_noop("Alias"),
+        EntryType::Card => crate::i18n::tr_noop("Cards"),
+        EntryType::Identity => crate::i18n::tr_noop("Identities"),
+        EntryType::Custom => crate::i18n::tr_noop("Custom items"),
+        EntryType::Wifi => crate::i18n::tr_noop("Wi-Fi networks"),
+        EntryType::SshKey => crate::i18n::tr_noop("SSH keys"),
+        EntryType::Totp => crate::i18n::tr_noop("TOTP authenticators"),
+        EntryType::License => crate::i18n::tr_noop("Licenses"),
     }
 }
 

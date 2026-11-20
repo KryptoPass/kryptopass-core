@@ -38,7 +38,9 @@ fn origin(server: &str) -> Result<url::Url> {
         || url.fragment().is_some()
         || url.path() != "/"
     {
-        bail!("Para publicar o comprobar, usa un servidor HTTPS o HKPS sin ruta ni credenciales.");
+        bail!(crate::i18n::tr_noop(
+            "To publish or check, use an HTTPS or HKPS server without a path or credentials."
+        ));
     }
     Ok(url)
 }
@@ -47,7 +49,9 @@ pub fn run(fingerprint: &str, server: &str, upload: bool) -> Result<catalog::Cat
     let origin = origin(server)?;
     let public = Keyring::system().public_key_armored(&fingerprint)?;
     if public.len() > 1024 * 1024 {
-        bail!("La clave pública supera el límite de publicación de 1 MiB.");
+        bail!(crate::i18n::tr_noop(
+            "The public key exceeds the 1 MiB publishing limit."
+        ));
     }
     let digest = format!("{:x}", Sha256::digest(public.as_bytes()));
     let client = reqwest::blocking::Client::builder()
@@ -64,12 +68,16 @@ pub fn run(fingerprint: &str, server: &str, upload: bool) -> Result<catalog::Cat
             return Ok(Observation::Missing);
         }
         if !response.status().is_success() {
-            bail!("El servidor no pudo completar la consulta.");
+            bail!(crate::i18n::tr_noop(
+                "The server could not complete the lookup."
+            ));
         }
         let mut bytes = Vec::new();
         response.take(1024 * 1024 + 1).read_to_end(&mut bytes)?;
         if bytes.len() > 1024 * 1024 {
-            bail!("La respuesta del servidor supera el límite permitido.");
+            bail!(crate::i18n::tr_noop(
+                "The server's response exceeds the allowed limit."
+            ));
         }
         let mut context = gpgme::Context::from_protocol(gpgme::Protocol::OpenPgp)?;
         let mut data = gpgme::Data::from_bytes(bytes)?;
@@ -78,14 +86,18 @@ pub fn run(fingerprint: &str, server: &str, upload: bool) -> Result<catalog::Cat
         for key in keys {
             let key = key?;
             if key.has_secret() {
-                bail!("El servidor no devolvió una clave pública válida.");
+                bail!(crate::i18n::tr_noop(
+                    "The server did not return a valid public key."
+                ));
             }
             if key.fingerprint().ok() == Some(fingerprint.as_str()) {
                 found = true;
             }
         }
         if !found {
-            bail!("La respuesta no contiene la identidad solicitada.");
+            bail!(crate::i18n::tr_noop(
+                "The response does not contain the requested identity."
+            ));
         }
         Ok(Observation::Present)
     };
@@ -97,7 +109,9 @@ pub fn run(fingerprint: &str, server: &str, upload: bool) -> Result<catalog::Cat
             .map_err(anyhow::Error::from)
             .and_then(|response| {
                 if !response.status().is_success() {
-                    bail!("El servidor no aceptó la publicación. Puedes volver a intentarlo.");
+                    bail!(crate::i18n::tr_noop(
+                        "The server did not accept the publication. You can try again."
+                    ));
                 }
                 // The upload is what was asked for; a failed look-up afterwards only leaves
                 // the presence unknown until the next check.
@@ -131,11 +145,11 @@ pub fn run(fingerprint: &str, server: &str, upload: bool) -> Result<catalog::Cat
             None => {}
         }
         Ok(())
-    }).context("La operación online terminó, pero no se pudo guardar su estado local. Comprueba el servidor antes de repetirla.")?;
+    }).context(crate::i18n::tr_noop("The online operation finished, but its local state could not be saved. Check the server before repeating it."))?;
     match result {
         Ok(_) => Ok(catalog),
-        Err(_) => bail!(
-            "No se pudo completar la operación con el servidor. Revisa la conexión y vuelve a intentarlo."
-        ),
+        Err(_) => bail!(crate::i18n::tr_noop(
+            "The operation with the server could not be completed. Check the connection and try again."
+        )),
     }
 }

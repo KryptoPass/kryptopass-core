@@ -9,7 +9,7 @@ pub fn summary_json(plan: &PreparedImport) -> String {
         .iter()
         .map(|(kind, count)| {
             let (kind, label) = entry_type_display(*kind);
-            serde_json::json!({ "kind": kind, "label": crate::i18n::text(label), "count": count })
+            serde_json::json!({ "kind": kind, "label": crate::i18n::tr(label), "count": count })
         })
         .collect();
     serde_json::json!({
@@ -24,16 +24,16 @@ pub fn summary_json(plan: &PreparedImport) -> String {
 
 fn entry_type_display(kind: EntryType) -> (&'static str, &'static str) {
     match kind {
-        EntryType::Login => ("login", "Inicios de sesión"),
-        EntryType::Note => ("note", "Notas"),
-        EntryType::Alias => ("login", "Alias (se guardan como inicios de sesión)"),
-        EntryType::Card => ("card", "Tarjetas de pago"),
-        EntryType::Identity => ("identity", "Identidades"),
-        EntryType::Custom => ("custom", "Secretos personalizados"),
-        EntryType::Wifi => ("wifi", "Redes Wi-Fi"),
-        EntryType::SshKey => ("ssh-key", "Claves SSH"),
-        EntryType::Totp => ("totp", "Autenticadores TOTP"),
-        EntryType::License => ("license", "Licencias"),
+        EntryType::Login => ("login", crate::i18n::tr_noop("Logins")),
+        EntryType::Note => ("note", crate::i18n::tr_noop("Notes")),
+        EntryType::Alias => ("login", crate::i18n::tr_noop("Aliases (saved as logins)")),
+        EntryType::Card => ("card", crate::i18n::tr_noop("Payment cards")),
+        EntryType::Identity => ("identity", crate::i18n::tr_noop("Identities")),
+        EntryType::Custom => ("custom", crate::i18n::tr_noop("Custom secrets")),
+        EntryType::Wifi => ("wifi", crate::i18n::tr_noop("Wi-Fi networks")),
+        EntryType::SshKey => ("ssh-key", crate::i18n::tr_noop("SSH keys")),
+        EntryType::Totp => ("totp", crate::i18n::tr_noop("TOTP authenticators")),
+        EntryType::License => ("license", crate::i18n::tr_noop("Licenses")),
     }
 }
 
@@ -43,7 +43,7 @@ pub fn warnings_json(plan: &PreparedImport) -> String {
     let mut push = |count: u32, text: &str, loss: bool| {
         if count > 0 {
             notes.push(serde_json::json!({
-                "text": crate::i18n::format(text, &[count.to_string()]),
+                "text": crate::i18n::trf(text, &[count.to_string()]),
                 "loss": loss,
             }));
         }
@@ -51,37 +51,41 @@ pub fn warnings_json(plan: &PreparedImport) -> String {
     for (kind, text, loss) in [
         (
             EntryWarningKind::UnsupportedEntryType,
-            "%1 elementos de un tipo no compatible no se importarán.",
+            crate::i18n::tr_noop("%1 items of an unsupported type will not be imported."),
             true,
         ),
         (
             EntryWarningKind::AttachmentsNotImported,
-            "%1 elementos tienen adjuntos que no se importarán.",
+            crate::i18n::tr_noop("%1 items have attachments that will not be imported."),
             true,
         ),
         (
             EntryWarningKind::UnreadableSshKey,
-            "%1 claves SSH no compatibles no se importarán.",
+            crate::i18n::tr_noop("%1 unsupported SSH keys will not be imported."),
             true,
         ),
         (
             EntryWarningKind::PasskeysAsReferences,
-            "%1 passkeys se guardarán solo como referencia; no sirven para iniciar sesión.",
+            crate::i18n::tr_noop(
+                "%1 passkeys will be saved only as a reference; they cannot be used to sign in.",
+            ),
             false,
         ),
         (
             EntryWarningKind::ConflictingPublicKey,
-            "%1 claves públicas se guardarán como referencia porque no coinciden con su clave privada.",
+            crate::i18n::tr_noop(
+                "%1 public keys will be saved as a reference because they do not match their private key.",
+            ),
             false,
         ),
         (
             EntryWarningKind::AutofillRulesAsReferences,
-            "%1 reglas de autocompletado se guardarán como referencia.",
+            crate::i18n::tr_noop("%1 autofill rules will be saved as a reference."),
             false,
         ),
         (
             EntryWarningKind::SourceFieldsPreserved,
-            "%1 elementos conservan datos del origen como campos de referencia.",
+            crate::i18n::tr_noop("%1 items keep data from the source as reference fields."),
             false,
         ),
     ] {
@@ -95,27 +99,29 @@ pub fn warnings_json(plan: &PreparedImport) -> String {
     let adaptations = &plan.adaptations;
     push(
         adaptations.aliases_as_logins,
-        "%1 alias se guardarán como inicios de sesión con su correo.",
+        crate::i18n::tr_noop("%1 aliases will be saved as logins with their email."),
         false,
     );
     push(
         adaptations.folder_descriptions,
-        "%1 descripciones de carpeta se guardarán como notas.",
+        crate::i18n::tr_noop("%1 folder descriptions will be saved as notes."),
         false,
     );
     push(
         adaptations.values_as_custom,
-        "%1 valores no encajan en su campo y se guardarán como campos añadidos.",
+        crate::i18n::tr_noop("%1 values do not fit their field and will be saved as added fields."),
         false,
     );
     push(
         adaptations.entries_as_custom,
-        "%1 elementos no encajan en su plantilla y se guardarán como personalizados.",
+        crate::i18n::tr_noop(
+            "%1 items do not fit their template and will be saved as custom items.",
+        ),
         false,
     );
     push(
         adaptations.rejected,
-        "%1 elementos no encajan en ninguna plantilla y no se importarán.",
+        crate::i18n::tr_noop("%1 items do not fit any template and will not be imported."),
         true,
     );
     serde_json::Value::Array(notes).to_string()
@@ -123,23 +129,23 @@ pub fn warnings_json(plan: &PreparedImport) -> String {
 
 pub fn review_error(error: &anyhow::Error) -> &'static str {
     match error.downcast_ref::<ImportError>() {
-        Some(ImportError::Decryption) => {
-            "No se pudo descifrar la exportación. Revisa las credenciales en el servicio de descifrado y vuelve a intentarlo."
-        }
-        Some(ImportError::DecryptionRequired) => {
-            "Esta integración necesita un servicio de descifrado para leer el archivo elegido."
-        }
-        Some(ImportError::Limit) => {
-            "El archivo o los datos adaptados superan los límites de importación. Exporta menos elementos y vuelve a intentarlo."
-        }
-        Some(ImportError::Content) => {
-            "La exportación contiene datos que la bóveda actual no puede representar. No se ha importado ningún elemento. Conserva el original y revisa sus tipos y tamaños."
-        }
-        Some(_) => {
-            "El archivo no es compatible con la integración seleccionada. Comprueba el gestor y el formato de exportación."
-        }
-        None => {
-            "No se pudo leer el archivo. Comprueba su ubicación y los permisos y vuelve a intentarlo."
-        }
+        Some(ImportError::Decryption) => crate::i18n::tr_noop(
+            "The export could not be decrypted. Check the credentials in the decryption service and try again.",
+        ),
+        Some(ImportError::DecryptionRequired) => crate::i18n::tr_noop(
+            "This integration needs a decryption service to read the chosen file.",
+        ),
+        Some(ImportError::Limit) => crate::i18n::tr_noop(
+            "The file or the adapted data exceed the import limits. Export fewer items and try again.",
+        ),
+        Some(ImportError::Content) => crate::i18n::tr_noop(
+            "The export contains data that the current vault cannot represent. No item was imported. Keep the original and check its types and sizes.",
+        ),
+        Some(_) => crate::i18n::tr_noop(
+            "The file is not compatible with the selected integration. Check the manager and the export format.",
+        ),
+        None => crate::i18n::tr_noop(
+            "The file could not be read. Check its location and permissions and try again.",
+        ),
     }
 }

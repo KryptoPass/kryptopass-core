@@ -5,7 +5,7 @@ use kryptopass_import::{
 };
 use serde_json::{Value, json};
 
-use crate::i18n::text;
+use crate::i18n::tr as text;
 
 const SYNTHETIC_INFO: ImporterInfo = ImporterInfo {
     id: "org.kryptopass.importer.synthetic",
@@ -117,20 +117,20 @@ fn catalog_projects_synthetic_importer_metadata() -> Result<()> {
             "formats": ["csv", "tsv"],
             "fileFilters": [
                 "Synthetic Importer (*.csv *.tsv)",
-                text("Todos los archivos (*)"),
+                text("All files (*)"),
             ],
-            "entryTypes": [text("Redes Wi-Fi"), text("Claves SSH"), text("Licencias")],
+            "entryTypes": [text("Wi-Fi networks"), text("SSH keys"), text("Licenses")],
             "capabilities": expected_capabilities(&[
-                ("Carpetas", "unsupported"),
-                ("Descripciones de carpetas", "supported"),
-                ("Favoritos", "unsupported"),
-                ("Papelera", "supported"),
-                ("Fechas originales", "unsupported"),
-                ("Campos adicionales", "supported"),
+                ("Folders", "unsupported"),
+                ("Folder descriptions", "supported"),
+                ("Favorites", "unsupported"),
+                ("Trash", "supported"),
+                ("Original dates", "unsupported"),
+                ("Additional fields", "supported"),
                 ("Passkeys", "supported"),
-                ("Reglas de autocompletado", "reference"),
-                ("Adjuntos", "unsupported"),
-                ("Archivos cifrados", "supported"),
+                ("Autofill rules", "reference"),
+                ("Attachments", "unsupported"),
+                ("Encrypted files", "supported"),
             ]),
             "decryptionAvailable": true,
             "requiresDecryptor": true,
@@ -184,7 +184,7 @@ fn catalog_separates_decryption_availability_from_encryption_requirements() -> R
                 .context("catalog capabilities must be an array")?;
             let encrypted = capabilities
                 .iter()
-                .find(|capability| capability["label"] == text("Archivos cifrados"))
+                .find(|capability| capability["label"] == text("Encrypted files"))
                 .context("catalog must describe encrypted-file support")?;
             assert_eq!(
                 encrypted["support"],
@@ -240,19 +240,19 @@ fn catalog_keeps_each_registered_importers_metadata_separate() -> Result<()> {
             "id": "org.kryptopass.importer.synthetic.secondary",
             "name": "Secondary Importer",
             "formats": ["ini"],
-            "fileFilters": ["Secondary Importer (*.ini)", text("Todos los archivos (*)")],
-            "entryTypes": [text("Notas"), text("Autenticadores TOTP")],
+            "fileFilters": ["Secondary Importer (*.ini)", text("All files (*)")],
+            "entryTypes": [text("Notes"), text("TOTP authenticators")],
             "capabilities": expected_capabilities(&[
-                ("Carpetas", "supported"),
-                ("Descripciones de carpetas", "unsupported"),
-                ("Favoritos", "supported"),
-                ("Papelera", "unsupported"),
-                ("Fechas originales", "supported"),
-                ("Campos adicionales", "unsupported"),
+                ("Folders", "supported"),
+                ("Folder descriptions", "unsupported"),
+                ("Favorites", "supported"),
+                ("Trash", "unsupported"),
+                ("Original dates", "supported"),
+                ("Additional fields", "unsupported"),
                 ("Passkeys", "unsupported"),
-                ("Reglas de autocompletado", "supported"),
-                ("Adjuntos", "reference"),
-                ("Archivos cifrados", "supported"),
+                ("Autofill rules", "supported"),
+                ("Attachments", "reference"),
+                ("Encrypted files", "supported"),
             ]),
             "decryptionAvailable": true,
             "requiresDecryptor": false,

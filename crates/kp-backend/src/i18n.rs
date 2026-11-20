@@ -1,5 +1,8 @@
 //! Text the backend shows to people, translated by the UI's catalog.
 //!
+//! Source texts are English. `tr`, `trf` and `tr_noop` are the names `Messages.sh`
+//! extracts, so every user-facing literal goes through one of them.
+//!
 //! Until the backend returns typed results, the UI installs its translator at
 //! start-up. Without one, texts come out in their source language.
 
@@ -12,16 +15,21 @@ pub fn set_translator(translator: fn(&str) -> String) {
     let _ = TRANSLATOR.set(translator);
 }
 
-pub fn text(source: &str) -> String {
+pub fn tr(source: &str) -> String {
     match TRANSLATOR.get() {
         Some(translate) => translate(source),
         None => source.to_owned(),
     }
 }
 
-/// Substitute Qt-style numbered placeholders without interpreting argument contents.
-pub fn format(source: &str, arguments: &[String]) -> String {
-    let translated = text(source);
+/// Marks a text that is translated later, where it is shown, and returns it unchanged.
+pub const fn tr_noop(source: &'static str) -> &'static str {
+    source
+}
+
+/// Substitute numbered numbered placeholders without interpreting argument contents.
+pub fn trf(source: &str, arguments: &[String]) -> String {
+    let translated = tr(source);
     let mut output = String::new();
     let mut remainder = translated.as_str();
     while let Some(start) = remainder.find('%') {

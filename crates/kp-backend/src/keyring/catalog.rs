@@ -138,7 +138,9 @@ pub(super) fn update(edit: impl FnOnce(&mut Catalog) -> Result<()>) -> Result<Ca
 fn label(value: String) -> Result<String> {
     let value = value.trim();
     if value.is_empty() || value.chars().count() > 160 || value.chars().any(char::is_control) {
-        bail!("Escribe un nombre de entre 1 y 160 caracteres, sin saltos de línea.");
+        bail!(crate::i18n::tr_noop(
+            "Enter a name of 1 to 160 characters, without line breaks."
+        ));
     }
     Ok(value.to_owned())
 }
@@ -146,7 +148,9 @@ fn key<'a>(keys: &'a [KeyInfo], fingerprint: &str) -> Result<&'a KeyInfo> {
     let fingerprint = Fingerprint::parse(fingerprint)?;
     keys.iter()
         .find(|key| key.fingerprint == fingerprint)
-        .context("La identidad ya no está en el llavero. Actualiza la lista.")
+        .context(crate::i18n::tr_noop(
+            "The identity is no longer in the keyring. Refresh the list.",
+        ))
 }
 pub fn now() -> u64 {
     SystemTime::now()
@@ -156,7 +160,9 @@ pub fn now() -> u64 {
 }
 pub fn edit(request: &str, keys: &[KeyInfo]) -> Result<Catalog> {
     if request.len() > 16 * 1024 {
-        bail!("La solicitud supera el tamaño permitido.");
+        bail!(crate::i18n::tr_noop(
+            "The request exceeds the allowed size."
+        ));
     }
     let edit: Edit = serde_json::from_str(request)?;
     update(|catalog| {
@@ -170,11 +176,13 @@ pub fn edit(request: &str, keys: &[KeyInfo]) -> Result<Catalog> {
             } => {
                 let key = key(keys, &fingerprint)?;
                 if own && person.is_some() {
-                    bail!("Una identidad propia no se asigna a otra persona.");
+                    bail!(crate::i18n::tr_noop(
+                        "Your own identity is not assigned to another person."
+                    ));
                 }
                 if let Some(id) = &person {
                     if !catalog.people.contains_key(id) {
-                        bail!("Selecciona una persona existente.");
+                        bail!(crate::i18n::tr_noop("Select an existing person."));
                     }
                 }
                 let identity = catalog
@@ -196,7 +204,7 @@ pub fn edit(request: &str, keys: &[KeyInfo]) -> Result<Catalog> {
             Edit::Person { id, name } => {
                 let id = match id {
                     Some(id) if catalog.people.contains_key(&id) => id,
-                    Some(_) => bail!("La persona ya no existe."),
+                    Some(_) => bail!(crate::i18n::tr_noop("The person no longer exists.")),
                     None => uuid::Uuid::new_v4().to_string(),
                 };
                 catalog.people.insert(id, Person { name: label(name)? });
@@ -225,7 +233,7 @@ pub fn edit(request: &str, keys: &[KeyInfo]) -> Result<Catalog> {
                     .subkeys
                     .iter()
                     .find(|subkey| subkey.fingerprint.as_ref() == Some(&target))
-                    .context("Selecciona una clave de esta identidad.")?;
+                    .context(crate::i18n::tr_noop("Select a key of this identity."))?;
                 let compatible = match purpose {
                     Purpose::Encrypt => subkey.can_encrypt,
                     Purpose::Sign => subkey.can_sign,
@@ -242,14 +250,16 @@ pub fn edit(request: &str, keys: &[KeyInfo]) -> Result<Catalog> {
                     || subkey.disabled
                     || subkey.invalid
                 {
-                    bail!("La clave no está disponible para ese uso.");
+                    bail!(crate::i18n::tr_noop(
+                        "The key is not available for that use."
+                    ));
                 }
                 let identity = catalog
                     .identities
                     .entry(key.fingerprint.to_string())
                     .or_default();
                 if identity.uses.len() >= 128 {
-                    bail!("Esta identidad ya tiene 128 usos.");
+                    bail!(crate::i18n::tr_noop("This identity already has 128 uses."));
                 }
                 identity.uses.push(KeyUse {
                     id: uuid::Uuid::new_v4().to_string(),
@@ -279,7 +289,7 @@ pub fn edit(request: &str, keys: &[KeyInfo]) -> Result<Catalog> {
                     .iter()
                     .any(|subkey| subkey.fingerprint.as_ref() == Some(&target))
                 {
-                    bail!("Selecciona una clave de esta identidad.");
+                    bail!(crate::i18n::tr_noop("Select a key of this identity."));
                 }
                 let name = if name.trim().is_empty() {
                     None
@@ -312,7 +322,7 @@ pub fn edit(request: &str, keys: &[KeyInfo]) -> Result<Catalog> {
                     .entry(key.fingerprint.to_string())
                     .or_default();
                 if verified && (key.revoked || key.expired || key.invalid || key.disabled) {
-                    bail!("La identidad no está vigente.");
+                    bail!(crate::i18n::tr_noop("The identity is not currently valid."));
                 }
                 identity.verified_at = verified.then(now);
                 identity.verified_user_ids = if verified {

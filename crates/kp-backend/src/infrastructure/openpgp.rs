@@ -653,13 +653,11 @@ fn encrypt_bounded_in_context(
                 detail = %detail,
                 "OpenPGP encryption refused: the key is here with its private part but GnuPG does not trust it as the user's own"
             );
-            anyhow::anyhow!(
-                "{}",
-                crate::i18n::format(
-                    "GnuPG no puede cifrar con la clave %1 porque no está marcada como tuya. Ábrela en Claves y pulsa «Marcar como mía».",
-                    std::slice::from_ref(fingerprint),
-                )
-            )
+            let message = crate::i18n::trf(
+                "GnuPG cannot encrypt with key %1 because it is not marked as yours. Open it in Keys and choose “Mark as Mine”.",
+                std::slice::from_ref(fingerprint),
+            );
+            anyhow::anyhow!("{message}")
         } else {
             tracing::warn!(detail = %detail, recipients = keys.len(), "OpenPGP encryption failed");
             anyhow::anyhow!("OpenPGP encryption failed: {detail}")

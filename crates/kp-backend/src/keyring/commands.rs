@@ -19,7 +19,7 @@ pub fn list_keys() -> Result<Vec<KeyInfo>, String> {
 /// Signs a fixed probe message with one specific key so the agent asks for that key's passphrase.
 pub fn probe_agent_for(fingerprint: &str) -> Result<(), String> {
     let fingerprint = kryptopass_keyring::Fingerprint::parse(fingerprint)
-        .map_err(|_| crate::i18n::text("La huella de la clave no es válida."))?;
+        .map_err(|_| crate::i18n::tr("The key's fingerprint is not valid."))?;
     Keyring::system()
         .probe_agent_for(&fingerprint)
         .map_err(|error| super::errors::describe(&error))
@@ -57,5 +57,5 @@ pub fn availability() -> Result<String, String> {
         }
         Ok(serde_json::Value::Object(records).to_string())
     };
-    read().map_err(|_| crate::i18n::text("No se pudo comprobar dónde está disponible cada clave."))
+    read().map_err(|_| crate::i18n::tr("Where each key is available could not be checked."))
 }
